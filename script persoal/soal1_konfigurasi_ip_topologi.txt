@@ -1,0 +1,162 @@
+SOAL 1 - KONFIGURASI TOPOLOGI DAN IP ADDRESS
+Prefix kelompok: 10.68.x.x
+
+Topologi rootkit:
+- eth0 -> NAT / WAN
+- eth1 -> Switch6 -> alpha, beta, gamma
+- eth2 -> Switch4 -> abbey
+- eth3 -> Switch1 -> prab, tedd, obladi, desmond, oblada, molly
+- eth4 -> Switch5 -> penny
+- eth5 -> Switch7 -> delta, epsilon
+
+==================================================
+A. ROOTKIT
+==================================================
+
+File:
+    /etc/network/interfaces
+
+Isi:
+
+auto eth0
+iface eth0 inet dhcp
+
+auto eth1
+iface eth1 inet static
+    address 10.68.1.1
+    netmask 255.255.255.0
+
+auto eth2
+iface eth2 inet static
+    address 10.68.2.1
+    netmask 255.255.255.0
+
+auto eth3
+iface eth3 inet static
+    address 10.68.3.1
+    netmask 255.255.255.0
+
+auto eth4
+iface eth4 inet static
+    address 10.68.4.1
+    netmask 255.255.255.0
+
+auto eth5
+iface eth5 inet static
+    address 10.68.5.1
+    netmask 255.255.255.0
+
+Keterangan:
+- eth0 menggunakan DHCP karena terhubung ke NAT/WAN.
+- eth1 sampai eth5 menjadi gateway untuk masing-masing subnet internal.
+- rootkit tidak diberi default gateway pada interface internal.
+
+==================================================
+B. HOST NON-ROUTER
+==================================================
+
+Alpha
+auto eth0
+iface eth0 inet static
+    address 10.68.1.2
+    netmask 255.255.255.0
+    gateway 10.68.1.1
+
+Beta
+auto eth0
+iface eth0 inet static
+    address 10.68.1.3
+    netmask 255.255.255.0
+    gateway 10.68.1.1
+
+Gamma
+auto eth0
+iface eth0 inet static
+    address 10.68.1.4
+    netmask 255.255.255.0
+    gateway 10.68.1.1
+
+Abbey
+auto eth0
+iface eth0 inet static
+    address 10.68.2.2
+    netmask 255.255.255.0
+    gateway 10.68.2.1
+
+Prab
+auto eth0
+iface eth0 inet static
+    address 10.68.3.2
+    netmask 255.255.255.0
+    gateway 10.68.3.1
+
+Tedd
+auto eth0
+iface eth0 inet static
+    address 10.68.3.3
+    netmask 255.255.255.0
+    gateway 10.68.3.1
+
+Obladi
+auto eth0
+iface eth0 inet static
+    address 10.68.3.4
+    netmask 255.255.255.0
+    gateway 10.68.3.1
+
+Desmond
+auto eth0
+iface eth0 inet static
+    address 10.68.3.5
+    netmask 255.255.255.0
+    gateway 10.68.3.1
+
+Oblada
+auto eth0
+iface eth0 inet static
+    address 10.68.3.6
+    netmask 255.255.255.0
+    gateway 10.68.3.1
+
+Molly
+auto eth0
+iface eth0 inet static
+    address 10.68.3.7
+    netmask 255.255.255.0
+    gateway 10.68.3.1
+
+Penny
+auto eth0
+iface eth0 inet static
+    address 10.68.4.2
+    netmask 255.255.255.0
+    gateway 10.68.4.1
+
+Delta
+auto eth0
+iface eth0 inet static
+    address 10.68.5.2
+    netmask 255.255.255.0
+    gateway 10.68.5.1
+
+Epsilon
+auto eth0
+iface eth0 inet static
+    address 10.68.5.3
+    netmask 255.255.255.0
+    gateway 10.68.5.1
+
+==================================================
+C. VERIFIKASI DASAR
+==================================================
+
+Pada setiap node:
+ip -br a
+ip route
+
+Contoh dari Prab:
+ping -c 3 10.68.3.1
+
+Keterangan:
+- Default gateway setiap host adalah IP interface rootkit pada subnet yang sama.
+- Switch bukan gateway; switch hanya meneruskan frame di Layer 2.

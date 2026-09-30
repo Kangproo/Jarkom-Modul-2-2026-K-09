@@ -1,0 +1,114 @@
+SOAL 9 - WEB STATIS AREA VAULT DENGAN APACHE
+
+Domain: vault.k09.com
+Node: obladi dan desmond
+
+==================================================
+1. INSTALL APACHE
+==================================================
+
+Jalankan pada Obladi dan Desmond:
+
+apt update
+apt install -y apache2
+
+Keterangan:
+- Apache digunakan sebagai web server statis untuk area vault.
+
+==================================================
+2. BUAT DIRECTORY ARSIP
+==================================================
+
+Pada Obladi:
+
+mkdir -p /var/www/html/arsip
+echo "Arsip dari Obladi" > /var/www/html/arsip/obladi.txt
+echo "Dokumen Vault" > /var/www/html/arsip/dokumen.txt
+
+Pada Desmond:
+
+mkdir -p /var/www/html/arsip
+echo "Arsip dari Desmond" > /var/www/html/arsip/desmond.txt
+echo "Dokumen Vault" > /var/www/html/arsip/dokumen.txt
+
+Keterangan:
+- Directory /arsip digunakan untuk menampilkan directory listing.
+- File contoh dibuat agar isi directory terlihat saat diakses.
+
+==================================================
+3. KONFIGURASI APACHE
+==================================================
+
+Buat file:
+
+nano /etc/apache2/sites-available/vault.conf
+
+Isi:
+
+<VirtualHost *:80>
+    ServerName vault.k09.com
+
+    DocumentRoot /var/www/html
+
+    <Directory /var/www/html/arsip>
+        Options +Indexes
+        AllowOverride None
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+Keterangan:
+- ServerName menentukan hostname yang dilayani virtual host ini.
+- DocumentRoot menentukan root direktori web.
+- Options +Indexes mengaktifkan directory listing pada /arsip.
+- Require all granted mengizinkan client mengakses directory tersebut.
+
+==================================================
+4. AKTIFKAN SITE APACHE
+==================================================
+
+a2ensite vault.conf
+a2dissite 000-default.conf
+
+Keterangan:
+- vault.conf diaktifkan sebagai virtual host.
+- default site dinonaktifkan agar konfigurasi vault yang digunakan.
+
+==================================================
+5. SET SERVERNAME GLOBAL
+==================================================
+
+echo "ServerName vault.k09.com" > /etc/apache2/conf-available/servername.conf
+a2enconf servername
+
+Keterangan:
+- Menghilangkan warning AH00558 tentang ServerName global.
+
+==================================================
+6. VALIDASI DAN RESTART APACHE
+==================================================
+
+apache2ctl configtest
+service apache2 restart
+
+Target:
+Syntax OK
+
+Keterangan:
+- configtest mengecek apakah konfigurasi Apache valid sebelum service dijalankan ulang.
+
+==================================================
+7. VERIFIKASI DARI CLIENT
+==================================================
+
+Contoh dari Alpha:
+
+curl http://vault.k09.com/arsip/
+
+Target:
+- Output menampilkan "Index of /arsip".
+- Isi directory seperti dokumen.txt dan obladi.txt/desmond.txt terlihat.
+
+Keterangan:
+- Pengujian menggunakan hostname, bukan IP address.
+- Jika directory listing muncul, berarti Apache, DNS, dan autoindex bekerja.

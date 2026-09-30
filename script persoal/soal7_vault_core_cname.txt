@@ -1,0 +1,104 @@
+SOAL 7 - A RECORD VAULT/CORE DAN CNAME WWW/STATIC
+
+Domain: k09.com
+
+==================================================
+1. TAMBAHKAN RECORD DI PRAB
+==================================================
+
+Edit:
+
+nano /etc/bind/db.k09.com
+
+Tambahkan:
+
+vault       IN  A       10.68.3.4
+vault       IN  A       10.68.3.5
+
+core        IN  A       10.68.3.6
+core        IN  A       10.68.3.7
+
+www         IN  CNAME   penny.k09.com.
+static      IN  CNAME   abbey.k09.com.
+
+Keterangan:
+- vault.k09.com mengarah ke Obladi dan Desmond.
+- core.k09.com mengarah ke Oblada dan Molly.
+- www.k09.com menjadi alias ke penny.k09.com.
+- static.k09.com menjadi alias ke abbey.k09.com.
+
+==================================================
+2. NAIKKAN SERIAL SOA
+==================================================
+
+Ubah serial:
+
+2026093002
+
+menjadi:
+
+2026093003
+
+Keterangan:
+- Serial dinaikkan karena isi zone berubah agar Tedd dapat menerima update terbaru.
+
+==================================================
+3. VALIDASI DAN RESTART DNS PRAB
+==================================================
+
+named-checkconf
+named-checkzone k09.com /etc/bind/db.k09.com
+service named restart
+
+Target:
+- named-checkconf tidak menghasilkan error.
+- named-checkzone menghasilkan OK.
+
+==================================================
+4. VERIFIKASI RECORD
+==================================================
+
+dig vault.k09.com
+dig core.k09.com
+dig www.k09.com
+dig static.k09.com
+
+Target:
+
+vault.k09.com
+-> 10.68.3.4
+-> 10.68.3.5
+
+core.k09.com
+-> 10.68.3.6
+-> 10.68.3.7
+
+www.k09.com
+-> penny.k09.com
+-> 10.68.4.2
+
+static.k09.com
+-> abbey.k09.com
+-> 10.68.2.2
+
+==================================================
+5. VERIFIKASI DARI DUA CLIENT BERBEDA
+==================================================
+
+Contoh dari Alpha:
+
+dig vault.k09.com
+dig core.k09.com
+dig www.k09.com
+dig static.k09.com
+
+Contoh dari Delta:
+
+dig vault.k09.com
+dig core.k09.com
+dig www.k09.com
+dig static.k09.com
+
+Keterangan:
+- Hasil dari dua client harus konsisten.
+- vault dan core akan menampilkan dua IP karena masing-masing memiliki dua A record.

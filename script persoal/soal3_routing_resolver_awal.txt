@@ -1,0 +1,100 @@
+SOAL 3 - ROUTING INTERNAL DAN RESOLVER AWAL
+
+Tujuan:
+- Semua host dapat berkomunikasi lintas subnet melalui rootkit.
+- Semua host non-router memiliki resolver awal agar dapat mengakses domain internet dan mengunduh paket.
+
+==================================================
+A. ROUTING INTERNAL
+==================================================
+
+Tidak diperlukan static route tambahan pada host karena:
+- setiap host sudah memiliki default gateway menuju rootkit
+- rootkit memiliki interface langsung ke semua subnet internal
+- IP forwarding rootkit sudah diaktifkan pada soal 2
+
+Contoh jalur:
+Alpha 10.68.1.2
+    -> gateway rootkit eth1 10.68.1.1
+    -> rootkit melakukan routing
+    -> eth3 10.68.3.1
+    -> Prab 10.68.3.2
+
+Verifikasi contoh:
+Dari Alpha:
+ping -c 3 10.68.3.2
+
+Dari Prab:
+ping -c 3 10.68.1.2
+
+Jika berhasil, routing internal melalui rootkit berjalan.
+
+==================================================
+B. RESOLVER AWAL PADA SEMUA HOST NON-ROUTER
+==================================================
+
+Pada setiap host non-router tambahkan pada konfigurasi interface:
+
+    up echo "nameserver 192.168.122.1" > /etc/resolv.conf
+
+Contoh Alpha:
+
+auto eth0
+iface eth0 inet static
+    address 10.68.1.2
+    netmask 255.255.255.0
+    gateway 10.68.1.1
+    up echo "nameserver 192.168.122.1" > /etc/resolv.conf
+
+Diterapkan ke:
+- alpha
+- beta
+- gamma
+- delta
+- epsilon
+- prab
+- tedd
+- abbey
+- penny
+- obladi
+- desmond
+- oblada
+- molly
+
+TIDAK diterapkan ke rootkit.
+
+Keterangan:
+- Resolver 192.168.122.1 dipakai sementara sebelum DNS internal Prab-Tedd selesai dibuat.
+- Tanda ">" menimpa isi /etc/resolv.conf, sehingga nameserver tidak bertambah ganda setiap interface aktif.
+- Resolver ini memungkinkan host mengubah nama domain seperti google.com menjadi alamat IP.
+
+==================================================
+C. AKTIFKAN LANGSUNG TANPA RESTART (JIKA DIPERLUKAN)
+==================================================
+
+echo "nameserver 192.168.122.1" > /etc/resolv.conf
+
+==================================================
+D. VERIFIKASI
+==================================================
+
+cat /etc/resolv.conf
+
+Target:
+nameserver 192.168.122.1
+
+Tes akses internet melalui IP:
+ping -c 3 8.8.8.8
+
+Tes DNS:
+ping -c 3 google.com
+
+Interpretasi:
+- 8.8.8.8 berhasil tetapi google.com gagal -> jalur internet ada, resolver/DNS bermasalah.
+- 8.8.8.8 dan google.com berhasil -> routing, NAT, dan resolver awal bekerja.
+
+CATATAN:
+Setelah DNS internal Prab-Tedd aktif pada soal 4, resolver ini kemudian diganti menjadi urutan:
+1. Prab
+2. Tedd
+3. 192.168.122.1

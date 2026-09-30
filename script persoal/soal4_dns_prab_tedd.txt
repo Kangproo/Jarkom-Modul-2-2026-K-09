@@ -1,0 +1,219 @@
+SOAL 4 - DNS INTERNAL PRAB & TEDD
+Domain: k09.com
+
+IP yang digunakan:
+- Prab  : 10.68.3.2
+- Tedd  : 10.68.3.3
+- Penny : 10.68.4.2
+- Resolver luar: 192.168.122.1
+
+==================================================
+A. PRAB - DNS MASTER / PRIMARY
+==================================================
+
+1. Install paket DNS
+apt update
+apt install -y bind9 bind9utils dnsutils
+
+2. Konfigurasi /etc/bind/named.conf.options
+
+options {
+    directory "/var/cache/bind";
+
+    recursion yes;
+    allow-query { any; };
+
+    forwarders {
+        192.168.122.1;
+    };
+
+    dnssec-validation auto;
+
+    listen-on { any; };
+    listen-on-v6 { none; };
+};
+
+Keterangan:
+- recursion yes        : agar Prab bisa membantu query domain di luar zone internal.
+- allow-query any      : agar host lain di jaringan bisa melakukan query.
+- forwarders           : query domain luar diteruskan ke 192.168.122.1.
+- listen-on any        : menerima query dari seluruh interface IPv4.
+
+3. Konfigurasi /etc/bind/named.conf.local
+
+zone "k09.com" {
+    type master;
+    file "/etc/bind/db.k09.com";
+
+    notify yes;
+    allow-transfer {
+        10.68.3.3;
+    };
+};
+
+Keterangan:
+- type master          : Prab menjadi sumber utama zone k09.com.
+- notify yes           : memberi tahu Tedd saat zone berubah.
+- allow-transfer       : hanya Tedd yang diizinkan menarik zone.
+
+4. Buat /etc/bind/db.k09.com
+
+$TTL 86400
+
+@   IN  SOA prab.k09.com. root.k09.com. (
+        2026093001
+        3600
+        1800
+        604800
+        86400
+)
+
+@       IN  NS  prab.k09.com.
+@       IN  NS  tedd.k09.com.
+
+prab    IN  A   10.68.3.2
+tedd    IN  A   10.68.3.3
+
+@       IN  A   10.68.4.2
+
+Keterangan:
+- SOA menunjuk ke Prab sebagai DNS utama.
+- NS berisi Prab dan Tedd.
+- Apex k09.com diarahkan ke Penny (10.68.4.2).
+
+5. Validasi dan restart DNS Prab
+named-checkconf
+named-checkzone k09.com /etc/bind/db.k09.com
+service named restart
+
+6. Tes Prab
+dig @127.0.0.1 k09.com
+dig @127.0.0.1 prab.k09.com
+dig @127.0.0.1 tedd.k09.com
+
+
+==================================================
+B. TEDD - DNS SLAVE / SECONDARY
+==================================================
+
+1. Install paket DNS
+apt update
+apt install -y bind9 bind9utils dnsutils
+
+2. Konfigurasi /etc/bind/named.conf.options
+
+options {
+    directory "/var/cache/bind";
+
+    recursion yes;
+    allow-query { any; };
+
+    forwarders {
+        192.168.122.1;
+    };
+
+    dnssec-validation auto;
+
+    listen-on { any; };
+    listen-on-v6 { none; };
+};
+
+3. Konfigurasi /etc/bind/named.conf.local
+
+zone "k09.com" {
+    type slave;
+    masters {
+        10.68.3.2;
+    };
+    file "/var/cache/bind/db.k09.com";
+};
+
+Keterangan:
+- type slave           : Tedd menerima salinan zone dari Prab.
+- masters 10.68.3.2    : sumber zone adalah Prab.
+- file disimpan di /var/cache/bind karena zone dibuat dari hasil transfer.
+
+4. Validasi dan restart DNS Tedd
+named-checkconf
+service named restart
+
+5. Pastikan zone berhasil ditransfer
+ls -l /var/cache/bind/
+
+Target:
+- terdapat file db.k09.com
+
+6. Tes zone transfer dari Tedd
+dig @10.68.3.2 k09.com AXFR
+
+Target:
+- transfer berhasil dan record zone tampil.
+
+7. Tes Tedd sebagai authoritative DNS
+dig @10.68.3.3 k09.com
+dig @10.68.3.3 prab.k09.com
+dig @10.68.3.3 tedd.k09.com
+
+Target:
+- terdapat flag "aa"
+- k09.com      -> 10.68.4.2
+- prab.k09.com -> 10.68.3.2
+- tedd.k09.com -> 10.68.3.3
+
+
+==================================================
+C. RESOLVER SEMUA HOST NON-ROUTER
+==================================================
+
+Setelah Prab dan Tedd aktif, resolver semua host non-router diubah menjadi:
+
+nameserver 10.68.3.2
+nameserver 10.68.3.3
+nameserver 192.168.122.1
+
+Untuk mengaktifkan langsung:
+
+printf "nameserver 10.68.3.2\nnameserver 10.68.3.3\nnameserver 192.168.122.1\n" > /etc/resolv.conf
+
+Untuk dibuat persisten di /etc/network/interfaces, ganti baris resolver lama dengan:
+
+up printf "nameserver 10.68.3.2\nnameserver 10.68.3.3\nnameserver 192.168.122.1\n" > /etc/resolv.conf
+
+Diterapkan ke:
+- alpha
+- beta
+- gamma
+- delta
+- epsilon
+- prab
+- tedd
+- abbey
+- penny
+- obladi
+- desmond
+- oblada
+- molly
+
+TIDAK diterapkan ke rootkit karena rootkit berfungsi sebagai router.
+
+
+==================================================
+D. VERIFIKASI DARI CLIENT (CONTOH: ALPHA)
+==================================================
+
+cat /etc/resolv.conf
+dig k09.com
+dig prab.k09.com
+dig tedd.k09.com
+ping -c 3 google.com
+
+Target:
+- k09.com      -> 10.68.4.2
+- prab.k09.com -> 10.68.3.2
+- tedd.k09.com -> 10.68.3.3
+- domain luar tetap dapat di-resolve.
+
+CATATAN:
+- Pada image yang digunakan, restart service DNS memakai:
+  service named restart
+- service bind9 restart tidak dikenali.

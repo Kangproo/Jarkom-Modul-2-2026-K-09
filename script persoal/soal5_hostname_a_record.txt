@@ -1,0 +1,187 @@
+SOAL 5 - HOSTNAME SISTEM DAN A RECORD SETIAP NODE
+Domain: k09.com
+
+Tujuan:
+- Setiap node memiliki hostname sistem sesuai nama entitas.
+- Setiap node memiliki domain <hostname>.k09.com yang mengarah ke IP masing-masing.
+- Prab dan Tedd tidak ditambahkan ulang karena record-nya sudah dibuat pada soal 4.
+
+==================================================
+A. SET HOSTNAME PADA SETIAP NODE
+==================================================
+
+Pola umum:
+
+echo "NAMA_NODE" > /etc/hostname
+hostname NAMA_NODE
+
+Verifikasi:
+
+hostname
+cat /etc/hostname
+
+Hostname yang digunakan:
+- rootkit
+- alpha
+- beta
+- gamma
+- delta
+- epsilon
+- prab
+- tedd
+- abbey
+- penny
+- obladi
+- desmond
+- oblada
+- molly
+
+Contoh pada Alpha:
+
+echo "alpha" > /etc/hostname
+hostname alpha
+
+Contoh pada Rootkit:
+
+echo "rootkit" > /etc/hostname
+hostname rootkit
+
+==================================================
+B. TAMBAHKAN A RECORD DI PRAB
+==================================================
+
+Edit file:
+
+nano /etc/bind/db.k09.com
+
+Tambahkan record berikut:
+
+rootkit     IN  A   10.68.3.1
+
+alpha       IN  A   10.68.1.2
+beta        IN  A   10.68.1.3
+gamma       IN  A   10.68.1.4
+
+abbey       IN  A   10.68.2.2
+
+obladi      IN  A   10.68.3.4
+desmond     IN  A   10.68.3.5
+oblada      IN  A   10.68.3.6
+molly       IN  A   10.68.3.7
+
+penny       IN  A   10.68.4.2
+
+delta       IN  A   10.68.5.2
+epsilon     IN  A   10.68.5.3
+
+CATATAN:
+- Record prab dan tedd sudah ada dari soal 4, jadi tidak perlu ditulis ulang.
+- Rootkit memiliki banyak interface, tetapi digunakan satu IP representatif:
+  rootkit.k09.com -> 10.68.3.1
+
+==================================================
+C. NAIKKAN SERIAL SOA
+==================================================
+
+Setiap kali zone DNS diubah, serial SOA harus dinaikkan agar Tedd mengetahui ada versi baru.
+
+Contoh:
+
+Sebelum:
+2026093001
+
+Sesudah:
+2026093002
+
+Contoh bagian SOA:
+
+@   IN  SOA prab.k09.com. root.k09.com. (
+        2026093002
+        3600
+        1800
+        604800
+        86400
+)
+
+Keterangan:
+- Serial adalah nomor versi zone.
+- Jika serial Prab lebih besar daripada Tedd, Tedd akan mengetahui bahwa zone terbaru tersedia.
+- Format yang digunakan:
+  YYYYMMDDNN
+  YYYY = tahun
+  MM   = bulan
+  DD   = tanggal
+  NN   = nomor revisi pada hari tersebut
+
+==================================================
+D. VALIDASI DAN RESTART DNS PRAB
+==================================================
+
+named-checkconf
+named-checkzone k09.com /etc/bind/db.k09.com
+service named restart
+
+Target:
+- named-checkconf tidak menghasilkan error.
+- named-checkzone menghasilkan "OK".
+
+==================================================
+E. VERIFIKASI DNS
+==================================================
+
+Contoh dari Alpha:
+
+dig alpha.k09.com
+dig beta.k09.com
+dig gamma.k09.com
+dig abbey.k09.com
+dig obladi.k09.com
+dig desmond.k09.com
+dig oblada.k09.com
+dig molly.k09.com
+dig penny.k09.com
+dig delta.k09.com
+dig epsilon.k09.com
+dig rootkit.k09.com
+
+Target:
+
+alpha.k09.com    -> 10.68.1.2
+beta.k09.com     -> 10.68.1.3
+gamma.k09.com    -> 10.68.1.4
+
+abbey.k09.com    -> 10.68.2.2
+
+obladi.k09.com   -> 10.68.3.4
+desmond.k09.com  -> 10.68.3.5
+oblada.k09.com   -> 10.68.3.6
+molly.k09.com    -> 10.68.3.7
+
+penny.k09.com    -> 10.68.4.2
+
+delta.k09.com    -> 10.68.5.2
+epsilon.k09.com  -> 10.68.5.3
+
+rootkit.k09.com  -> 10.68.3.1
+
+==================================================
+F. VERIFIKASI HOSTNAME SISTEM
+==================================================
+
+Pada setiap node:
+
+hostname
+cat /etc/hostname
+
+Contoh target pada Alpha:
+alpha
+
+Contoh target pada Rootkit:
+rootkit
+
+Tambahan verifikasi rootkit dari client:
+
+dig rootkit.k09.com
+ping -c 3 rootkit.k09.com
+
+Jika resolve ke 10.68.3.1 dan ping berhasil, hostname DNS rootkit juga sudah benar.

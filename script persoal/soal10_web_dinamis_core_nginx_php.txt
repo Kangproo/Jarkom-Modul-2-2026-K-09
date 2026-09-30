@@ -1,0 +1,188 @@
+SOAL 10 - WEB DINAMIS AREA CORE DENGAN NGINX + PHP-FPM
+
+Domain: core.k09.com
+Node: oblada dan molly
+
+==================================================
+1. INSTALL NGINX DAN PHP-FPM
+==================================================
+
+Jalankan pada Oblada dan Molly:
+
+apt update
+apt install -y nginx php-fpm
+
+Aktifkan PHP-FPM:
+
+service php8.4-fpm start
+
+Cek socket:
+
+ls -l /run/php/
+
+Target:
+php8.4-fpm.sock
+
+Keterangan:
+- Nginx digunakan sebagai web server.
+- PHP-FPM memproses file PHP.
+- Socket php8.4-fpm.sock digunakan Nginx untuk meneruskan request PHP ke PHP-FPM.
+
+==================================================
+2. BUAT HALAMAN BERANDA
+==================================================
+
+Buat:
+
+nano /var/www/html/index.php
+
+Isi:
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Core K09</title>
+</head>
+<body>
+    <h1>Core K09</h1>
+    <p>Halaman beranda dari <?php echo gethostname(); ?>.</p>
+    <a href="/profil">Profil</a>
+</body>
+</html>
+
+Keterangan:
+- gethostname() menampilkan hostname node yang sedang melayani request.
+- Pada Oblada akan tampil "oblada", sedangkan pada Molly akan tampil "molly".
+
+==================================================
+3. BUAT HALAMAN PROFIL
+==================================================
+
+Buat:
+
+nano /var/www/html/profil.php
+
+Isi:
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profil Core</title>
+</head>
+<body>
+    <h1>Profil Core K09</h1>
+    <p>Halaman profil dari <?php echo gethostname(); ?>.</p>
+</body>
+</html>
+
+==================================================
+4. KONFIGURASI NGINX
+==================================================
+
+Buat:
+
+nano /etc/nginx/sites-available/core
+
+Isi:
+
+server {
+    listen 80;
+    server_name core.k09.com;
+
+    root /var/www/html;
+    index index.php index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location = /profil {
+        rewrite ^/profil$ /profil.php last;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+    }
+}
+
+Keterangan:
+- server_name menentukan hostname yang dilayani.
+- root menentukan directory web.
+- rewrite mengubah request /profil menjadi /profil.php secara internal.
+- URL yang dilihat client tetap /profil tanpa .php.
+- fastcgi_pass meneruskan file PHP ke PHP-FPM.
+
+==================================================
+5. AKTIFKAN SITE
+==================================================
+
+ln -s /etc/nginx/sites-available/core /etc/nginx/sites-enabled/core
+rm -f /etc/nginx/sites-enabled/default
+
+Keterangan:
+- Mengaktifkan konfigurasi core.
+- Menonaktifkan konfigurasi default Nginx.
+
+Jika symlink core sudah ada dan muncul "File exists", tidak perlu membuat ulang.
+
+==================================================
+6. VALIDASI DAN RESTART SERVICE
+==================================================
+
+nginx -t
+
+Target:
+syntax is ok
+test is successful
+
+Restart:
+
+service php8.4-fpm restart
+service nginx restart
+
+==================================================
+7. VERIFIKASI OBLADA
+==================================================
+
+Dari client, contoh Alpha:
+
+curl --resolve core.k09.com:80:10.68.3.6 http://core.k09.com/
+
+curl --resolve core.k09.com:80:10.68.3.6 http://core.k09.com/profil
+
+Target:
+- Beranda menampilkan hostname oblada.
+- /profil menampilkan halaman profil dari oblada.
+- URL yang digunakan tetap /profil tanpa .php.
+
+Keterangan:
+- --resolve digunakan untuk memaksa core.k09.com menuju Oblada secara spesifik.
+- Ini berguna karena core.k09.com memiliki dua A record.
+
+==================================================
+8. VERIFIKASI MOLLY
+==================================================
+
+Setelah konfigurasi yang sama diterapkan pada Molly:
+
+curl --resolve core.k09.com:80:10.68.3.7 http://core.k09.com/
+
+curl --resolve core.k09.com:80:10.68.3.7 http://core.k09.com/profil
+
+Target:
+- Beranda menampilkan hostname molly.
+- /profil menampilkan halaman profil dari molly.
+
+==================================================
+9. VERIFIKASI MELALUI HOSTNAME NORMAL
+==================================================
+
+Setelah Oblada dan Molly sama-sama aktif:
+
+curl http://core.k09.com/
+curl http://core.k09.com/profil
+
+Keterangan:
+- Pengujian menggunakan hostname core.k09.com.
+- Karena core.k09.com mempunyai dua A record, request dapat menuju Oblada atau Molly.

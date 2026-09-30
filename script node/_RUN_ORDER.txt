@@ -1,0 +1,27 @@
+Jarkom Modul 2 K09 - Script per Node (final sampai Soal 10)
+
+Setiap folder node memiliki file bernama script.sh.
+Saat dipindahkan ke node GNS3, letakkan sebagai:
+/root/script.sh
+
+Cara menjalankan:
+chmod +x /root/script.sh
+bash /root/script.sh
+
+Urutan yang disarankan:
+1. rootkit
+2. prab
+3. tedd
+4. alpha, beta, gamma, delta, epsilon
+5. abbey, penny
+6. obladi, desmond
+7. oblada, molly
+
+Catatan:
+- Script dibuat untuk kondisi final sampai Soal 10.
+- Rootkit mengaktifkan routing + NAT.
+- Prab/Tedd berisi konfigurasi DNS kumulatif sampai reverse DNS.
+- Obladi/Desmond berisi Apache Vault.
+- Oblada/Molly berisi Nginx + PHP-FPM Core.
+- Abbey dan Penny baru berisi konfigurasi dasar karena fungsi reverse proxy mulai Soal 11.
+- Jika interface belum langsung memakai konfigurasi baru, restart node setelah script selesai.

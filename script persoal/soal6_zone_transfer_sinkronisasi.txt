@@ -1,0 +1,61 @@
+SOAL 6 - VERIFIKASI ZONE TRANSFER DAN SINKRONISASI SOA
+
+Domain: k09.com
+
+==================================================
+1. CEK SERIAL SOA PRAB
+==================================================
+
+dig @10.68.3.2 k09.com SOA +short
+
+Keterangan:
+- Mengecek serial SOA pada DNS Prab.
+
+==================================================
+2. CEK SERIAL SOA TEDD
+==================================================
+
+dig @10.68.3.3 k09.com SOA +short
+
+Keterangan:
+- Mengecek serial SOA pada DNS Tedd.
+- Serial Prab dan Tedd harus sama.
+
+Target:
+Prab : 2026093002
+Tedd : 2026093002
+
+==================================================
+3. CEK RECORD TERBARU DI TEDD
+==================================================
+
+dig @10.68.3.3 alpha.k09.com
+dig @10.68.3.3 penny.k09.com
+
+Keterangan:
+- Memastikan Tedd sudah menerima record terbaru dari Prab.
+- Flag "aa" menunjukkan jawaban authoritative.
+
+Target:
+alpha.k09.com -> 10.68.1.2
+penny.k09.com -> 10.68.4.2
+
+==================================================
+4. VERIFIKASI ZONE TRANSFER
+==================================================
+
+Jalankan dari node Tedd:
+
+dig @10.68.3.2 k09.com AXFR
+
+Keterangan:
+- Memastikan Tedd dapat mengambil seluruh zone k09.com dari Prab.
+- AXFR harus dijalankan dari Tedd karena Prab hanya mengizinkan transfer ke IP Tedd.
+
+Target:
+- Transfer berhasil.
+- Seluruh record zone tampil.
+- Record terbaru dari soal 5 ikut muncul.
+
+CATATAN:
+Jika AXFR dijalankan dari Alpha dan muncul "Transfer failed", itu normal karena Alpha tidak diizinkan melakukan zone transfer.
