@@ -3,7 +3,7 @@
 | Nama | NRP |
 | :--- | :--- |
 | Sultan Ahmad Maulana Bahyshidqi | 5027251070 |
-| Muhammad Razzan Azizi Djauhari | **[ISI NRP RAZZAN]** |
+| Muhammad Razzan Azizi Djauhari | 5027251086 |
 
 Dokumentasi pengerjaan Praktikum Modul 2 Komunikasi Data & Jaringan Komputer menggunakan GNS3 dengan prefix jaringan `10.68.x.x` dan domain internal `k09.com`.
 
